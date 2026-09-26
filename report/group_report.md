@@ -53,9 +53,29 @@ Crossref REST API (Fallback: data/raw/crossref_response.json)
 
 ## 4. Bảng Đối Chiếu 3 Trạng Thái (Baseline vs Corrupted vs Repaired)
 
-Bảng đối chiếu định lượng chi tiết được sinh tự động từ pipeline thực tế và lưu trữ tại `data/reports/corruption_report.md`.
+Bảng đối chiếu định lượng chi tiết sinh tự động từ thực thi pipeline:
 
-## 5. Kết Luận & Bài Học Kinh Nghiệm
+| Tiêu chí / Metric | Baseline (Chuẩn) | Corrupted (Tiêm lỗi) | Repaired (Đã phục hồi) | Nhận xét & Đánh giá |
+| :--- | :---: | :---: | :---: | :--- |
+| **Tổng số tài liệu** | 24 | 23 | 24 | Mất do drop 20%, tăng do duplicate, phục hồi chuẩn 24 |
+| **Data Quality Gate (GX 1.x)** | **PASS** (True) | **FAIL** (False) | **PASS** (True) | Chốt kiểm dịch phát hiện lỗi schema, duplicate và rỗng summary |
+| **Freshness SLA** | **ĐẠT** (True) | **CẢNH BÁO** (False) | **ĐẠT** (True) | Vi phạm SLA khi tỷ lệ bài cũ (>180d) vượt quá 25% |
+| **Tỷ lệ bài quá hạn (>180d)** | 4.2% | 47.8% | 4.2% | Cảnh báo thời gian thực về dữ liệu quá hạn |
+| **Retrieval Hit Rate** | **1.0000** (100.0%) | **0.6000** (60.0%) | **1.0000** (100.0%) | Sụt giảm mạnh khi lỗi, khôi phục 100% sau repair |
+| **Mean Token F1** | **1.0000** | **0.5000** | **1.0000** | Chất lượng câu trả lời phục hồi hoàn toàn sau sửa chữa |
+
+Chi tiết tại: `data/reports/corruption_report.md`.
+
+## 5. Hạng Mục Điểm Thưởng Vượt Chuẩn (Bonus +10 Điểm)
+
+1. **B1: Interactive Observability Dashboard (`script/run_dashboard.py` & `src/observability/dashboard.py`):**
+   - Sinh giao diện HTML trực quan tại `data/reports/observability_dashboard.html` hiển thị biểu đồ phân bố độ tuổi bài báo, KPI Data Quality và cảnh báo Drift thời gian thực.
+2. **B2: Automated Self-Healing & Auto-Repair Pipeline (`script/run_self_healing_demo.py` & `src/observability/self_healing.py`):**
+   - Cổng tự phục hồi tự động phát hiện vi phạm Great Expectations hoặc Freshness SLA, ngay lập tức kích hoạt luồng tái tạo từ raw lineage snapshot mà không cần can thiệp thủ công.
+3. **B3: Automated Test Suite Pytest (`tests/test_pipeline.py`):**
+   - 6 test cases bao phủ toàn diện: Parser, Clean DataFrame 5-part modeling, Data Quality Gate GX 1.x, Freshness SLA, Benchmark generation và Data Corruption impact. Đã pass 100%.
+
+## 6. Kết Luận & Bài Học Kinh Nghiệm
 
 1. **Tầm quan trọng của Data Observability:** Trong các hệ thống RAG hiện đại, dữ liệu bẩn là nguyên nhân hàng đầu dẫn đến ảo giác (hallucination) mà không gây crash hệ thống (Silent Failure). Việc thiết lập Great Expectations 1.x đóng vai trò như một chốt kiểm dịch bắt buộc trước khi nạp vào Vector Database.
 2. **Thiết kế Idempotent:** Bảo toàn bản ghi thô (Raw Lineage) cho phép hệ thống tự phục hồi trạng thái một cách tin cậy và có thể lặp lại nhiều lần mà không phụ thuộc vào trạng thái lỗi trước đó.

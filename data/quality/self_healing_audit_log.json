@@ -1,0 +1,13 @@
+{
+  "timestamp": "2026-09-26T03:41:15.504203+00:00",
+  "violations": [
+    "Quality Check Failed: paper_id_unique",
+    "Quality Check Failed: summary_length_ge_20",
+    "Freshness SLA Breached: stale_ratio=0.4783 > 0.25 (stale_rows=11)"
+  ],
+  "healing_action": "Idempotent Re-ingestion from raw lineage snapshot",
+  "pre_repair_rows": 23,
+  "post_repair_rows": 24,
+  "post_repair_quality_success": true,
+  "post_repair_freshness_is_fresh": true
+}
