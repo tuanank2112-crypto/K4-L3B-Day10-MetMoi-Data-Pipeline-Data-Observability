@@ -43,11 +43,20 @@ def build_llm(settings: Settings, temperature: float = 0.0):
             base_url=settings.ollama_base_url,
             temperature=temperature,
         )
+    if provider == "vyce":
+        return ChatOpenAI(
+            model=settings.model_name,
+            api_key=settings.custom_llm_api_key or "unused",
+            base_url=settings.custom_llm_base_url or "https://vyceai.com/v1",
+            default_headers={"User-Agent": "vscode"},
+            temperature=temperature,
+        )
     if provider == "custom":
         return ChatOpenAI(
             model=settings.model_name,
             api_key=settings.custom_llm_api_key or "unused",
             base_url=settings.custom_llm_base_url,
+            default_headers={"User-Agent": "vscode"},
             temperature=temperature,
         )
     if provider == "mock":

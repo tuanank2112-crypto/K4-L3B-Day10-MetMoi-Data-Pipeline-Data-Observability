@@ -53,15 +53,26 @@ Question: {question}
 Reference answer: {reference}
 Model answer: {prediction}
 
-Return:
-- score from 1 to 5
-- correct = true only when the answer is materially correct
-- short reasoning
+Return STRICTLY a JSON object with keys:
+- score: integer from 1 to 5
+- correct: boolean (true only when the answer is materially correct)
+- reasoning: short explanation string
 """.strip()
     try:
         llm = build_llm(settings=settings, temperature=0.0).with_structured_output(JudgeVerdict)
         return llm.invoke(prompt)
     except Exception:
+        try:
+            import json, re
+            llm = build_llm(settings=settings, temperature=0.0)
+            res = llm.invoke(prompt)
+            content = getattr(res, "content", str(res))
+            match = re.search(r"\{.*\}", content, re.DOTALL)
+            if match:
+                data = json.loads(match.group(0))
+                return JudgeVerdict(**data)
+        except Exception:
+            pass
         score = 5 if _token_f1(reference, prediction) >= 0.95 else 3 if _token_f1(reference, prediction) >= 0.5 else 1
         return JudgeVerdict(
             score=score,

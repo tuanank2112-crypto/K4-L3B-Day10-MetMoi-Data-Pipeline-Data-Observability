@@ -121,8 +121,13 @@ def load_settings(project_dir: Path | None = None) -> Settings:
         openrouter_api_key=os.getenv("OPENROUTER_API_KEY"),
         openrouter_base_url=os.getenv("OPENROUTER_BASE_URL", "https://openrouter.ai/api/v1"),
         ollama_base_url=os.getenv("OLLAMA_BASE_URL", "http://localhost:11434"),
-        custom_llm_api_key=os.getenv("CUSTOM_LLM_API_KEY"),
-        custom_llm_base_url=os.getenv("CUSTOM_LLM_BASE_URL"),
+        custom_llm_api_key=os.getenv("CUSTOM_LLM_API_KEY") or os.getenv("VYCE_API_KEY"),
+        custom_llm_base_url=os.getenv("CUSTOM_LLM_BASE_URL")
+        or (
+            "https://vyceai.com/v1"
+            if os.getenv("LLM_PROVIDER", "").strip().lower() in {"vyce", "vyceai"}
+            else None
+        ),
         embedding_model="sentence-transformers/all-MiniLM-L6-v2",
         baseline_collection_name="papers-baseline",
         corrupted_collection_name="papers-corrupted",
@@ -145,6 +150,8 @@ def normalized_provider(settings: Settings) -> str:
         return "anthropic"
     if provider == "customllm":
         return "custom"
+    if provider in {"vyce", "vyceai"}:
+        return "vyce"
     return provider
 
 
@@ -168,10 +175,14 @@ def require_llm_credentials(settings: Settings) -> None:
         raise RuntimeError("OPENROUTER_API_KEY is required when LLM_PROVIDER=openrouter.")
     if provider in {"mock", "ollama"}:
         return
+    if provider == "vyce":
+        if settings.custom_llm_api_key or os.getenv("VYCE_API_KEY") or settings.openai_api_key:
+            return
+        raise RuntimeError("VYCE_API_KEY or CUSTOM_LLM_API_KEY is required when LLM_PROVIDER=vyce.")
     if provider == "custom":
         if settings.custom_llm_base_url:
             return
         raise RuntimeError("CUSTOM_LLM_BASE_URL is required when LLM_PROVIDER=custom.")
     raise RuntimeError(
-        "Unsupported LLM_PROVIDER. Expected one of: openai, gemini, anthropic, openrouter, ollama, custom, mock."
+        "Unsupported LLM_PROVIDER. Expected one of: openai, gemini, anthropic, openrouter, ollama, custom, mock, vyce."
     )
